@@ -1,77 +1,101 @@
-import { useState } from "react";
+import { useState, Dispatch, SetStateAction } from "react";
 import { AlertDialog, AlertDialogBackdrop, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, Box, Button, ButtonGroup, ButtonText, Checkbox, CheckboxGroup, CheckboxIcon, CheckboxIndicator, CheckboxLabel, Fab, FabIcon, FabLabel, FlatList, GluestackUIProvider, HStack, Heading, Image, Input, InputField, InputIcon, InputSlot, SafeAreaView, ScrollView, Text, VStack } from "@gluestack-ui/themed";
 import { config } from '@gluestack-ui/config';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { StatusBar } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 import bag from '../../../assets/Icons/bag.png';
 
-export default function Lista() {
+interface Item {
+    descricao: string,
+    preco: string,
+    peso?: string,
+    quantidade: number
+}
 
-    const [lista, setLista] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]);
+interface Lista {
+    lista: Item[],
+    consultarItemLista: (indice: number) => void;
+}
+
+export default function Lista(props: Lista) {
+
+    const navigation = useNavigation();
+
     const [itensSelecionadosLista, setItensSelecionadosLista] = useState([]);
     const [modalConfirmarLimpezaLista, setModalConfirmarLimpezaLista] = useState(false);
     const [modalCarregarItens, setModalCarregarItens] = useState(false);
     const [modalSalvarItens, setModalSalvarItens] = useState(false);
+    const [busca, setBusca] = useState<string>("");
 
     const ItemDaLista = (props: any) => {
-        return (
-            <HStack h={"$16"} mb={props.item == lista.length ? "$48" : 0} justifyContent="space-between" alignItems="center" borderBottomWidth={1} borderBottomColor="#c39e80">
-                <HStack alignItems="center" flex={1} mr="$10">
-                    <Button onPress={() => alert("Dados do item")} variant="link" flex={1} justifyContent="flex-start">
-                        {/* <FontAwesome5 name="shopping-bag" size={28} color="#222" /> */}
-                        <Image alt="iconeDaLista" size="xs" source={bag} />
-                        <VStack ml="$2">
-                            <Text color="#333" fontSize={16} fontWeight="bold">Teste</Text>
-                            <Text color="#444" fontSize={14}>qtd: 3</Text>
-                        </VStack>
+        // console.log(props);
+        if (props.item.descricao.toLowerCase().includes(busca.toLowerCase())) {
+            return (
+                <HStack h={"$16"} mb={props.item == props.total ? "$48" : 0} justifyContent="space-between" alignItems="center" borderBottomWidth={1} borderBottomColor="#c39e80">
+                    <HStack alignItems="center" flex={1} mr="$10">
+                        <Button onPress={() => props.consultarItemLista(props.indice)} variant="link" flex={1} justifyContent="flex-start">
+                            {/* <FontAwesome5 name="shopping-bag" size={28} color="#222" /> */}
+                            <Image alt="iconeDaLista" size="xs" source={bag} />
+                            <VStack ml="$2">
+                                <Text color="#333" fontSize={16} fontWeight="bold">{props.item.descricao}</Text>
+                                <Text color="#444" fontSize={14}>qtd: {props.item.quantidade}</Text>
+                            </VStack>
+                        </Button>
+                    </HStack>
+                    <Button width={"$12"} variant="link" onPress={() => alert("Inserir no carrinho")}>
+                        <FontAwesome5 name="arrow-right" size={20} color="#333" />
                     </Button>
-                </HStack>
-                <Button width={"$12"} variant="link" onPress={() => alert("Inserir no carrinho")}>
-                    <FontAwesome5 name="arrow-right" size={20} color="#333" />
-                </Button>
-                {/* <Button width={"$12"} variant="link" onPress={() => alert("Excluir")}>
+                    {/* <Button width={"$12"} variant="link" onPress={() => alert("Excluir")}>
                     <FontAwesome5 name="trash" size={20} color="#e53935" />
                 </Button> */}
-            </HStack >
-        )
+                </HStack>
+            );
+        }
     }
 
     return (
         <GluestackUIProvider config={config}>
+            <StatusBar
+                animated={true}
+                backgroundColor="#d5b59c"
+                hidden={false}
+            />
             <SafeAreaView flex={1} backgroundColor='#d5b59c'>
-                <Box mt="$5" p={"$6"}>
+                <Box p={"$6"}>
                     <HStack justifyContent="space-between">
                         <Button flex={1} mr="$5" bgColor="#b58154" $active-bg="#a67041" onPress={() => setModalCarregarItens(true)} >
                             <ButtonText>CARREGAR</ButtonText>
                         </Button>
-                        <Button flex={1} bgColor="#b58154" $active-bg="#a67041" onPress={() => setModalSalvarItens(true)}>
+                        <Button onPress={() => navigation.navigate("Carrinho")} flex={1} bgColor="#b58154" $active-bg="#a67041">
                             <ButtonText>SALVAR</ButtonText>
                         </Button>
                     </HStack>
                     <HStack justifyContent="center" mb="$5" mt="$5">
                         {/* <Heading verticalAlign="middle">Lista</Heading> */}
-                        {lista.length > 0 ?
+                        {/* {props.lista.length > 0 ?
                             <Button variant="link" onPress={() => setModalConfirmarLimpezaLista(true)}>
-                                <ButtonText color="#f44336">Limpar tudo ({lista.length})</ButtonText>
+                                <ButtonText color="#f44336">Limpar tudo ({props.lista.length})</ButtonText>
                             </Button>
                             : null
-                        }
+                        } */}
                     </HStack>
                     <Input bgColor="rgba(255,255,255,0.8)" mb="$5">
-                        <InputField placeholder="Procurar" />
-                        <InputSlot  px="$3">
+                        <InputField value={busca} onChangeText={(e) => setBusca(e)} placeholder="Procurar" />
+                        <InputSlot px="$3">
                             <InputIcon as={() => <FontAwesome5 name="search" size={16} color="#aaa" />} />
                         </InputSlot>
                     </Input>
                     <FlatList
-                        data={lista}
-                        renderItem={({ item }) => (
-                            <ItemDaLista item={item} />
+                        data={props.lista}
+                        renderItem={({ item, index }) => (
+                            <ItemDaLista item={item} indice={index} total={props.lista.length} consultarItemLista={props.consultarItemLista} />
                         )}
                     // mb={"$16"}
                     // keyExtractor={(item) => lista.id}
                     />
-                    <Fab
+                    {/* <Fab
                         size="md"
                         placement="bottom right"
                         isHovered={false}
@@ -79,15 +103,12 @@ export default function Lista() {
                         isPressed={false}
                         width={"$16"}
                         height={"$16"}
-                        // height="$12" 
-                        bottom="$56"
-                        bg="#eee"
-                        // right="$8"
+                        bottom="$40"
+                        bg="$white"
                         onPress={() => alert("Novo item")}
                     >
                         <FabIcon as={() => <FontAwesome5 name="plus" size={16} />} mr="$1" />
-                        {/* <FabLabel>Quick start</FabLabel> */}
-                    </Fab>
+                    </Fab> */}
                 </Box>
 
                 <AlertDialog

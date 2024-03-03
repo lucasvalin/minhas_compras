@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertDialog, AlertDialogBackdrop, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, Badge, BadgeIcon, BadgeText, Box, Button, ButtonGroup, ButtonText, Fab, FabIcon, FlatList, FormControl, FormControlLabel, GluestackUIProvider, HStack, Heading, Image, Input, InputField, InputIcon, InputSlot, SafeAreaView, Text, VStack } from "@gluestack-ui/themed";
 import { config } from '@gluestack-ui/config';
+import { Modal, StatusBar, TouchableOpacity } from 'react-native';
 
 import { FontAwesome5 } from '@expo/vector-icons';
 
@@ -8,7 +9,7 @@ import cart from '../../../assets/Icons/cart.png';
 
 export default function Carrinho() {
 
-    const [lista, setLista] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]);
+    const [lista, setLista] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
     const [modalItemCarrinho, setModalitemCarrinho] = useState(false);
 
     const ItemDaLista = (props: any) => {
@@ -36,8 +37,13 @@ export default function Carrinho() {
 
     return (
         <GluestackUIProvider config={config}>
+            <StatusBar
+                animated={true}
+                backgroundColor="#13131a"
+                hidden={false}
+            />
             <SafeAreaView flex={1} backgroundColor='#13131a'>
-                <Box mt="$10" p={"$5"}>
+                <Box p={"$5"}>
                     <HStack justifyContent="space-between" mb="$10">
                         <Button bgColor="$red600">
                             <ButtonText color="#eee" fontWeight="bold" fontSize={16}>Limpar Carrinho</ButtonText>
@@ -62,7 +68,7 @@ export default function Carrinho() {
                     // keyExtractor={(item) => lista.id}
                     />
 
-                    <Fab
+                    {/* <Fab
                         size="md"
                         placement="bottom right"
                         isHovered={false}
@@ -70,15 +76,12 @@ export default function Carrinho() {
                         isPressed={false}
                         width={"$16"}
                         height={"$16"}
-                        // height="$12" 
                         bottom="$40"
                         bg="$white"
-                        // right="$8"
                         onPress={() => alert("Novo item")}
                     >
                         <FabIcon as={() => <FontAwesome5 name="plus" size={16} />} mr="$1" />
-                        {/* <FabLabel>Quick start</FabLabel> */}
-                    </Fab>
+                    </Fab> */}
                 </Box>
 
                 <AlertDialog
@@ -97,27 +100,22 @@ export default function Carrinho() {
                         </AlertDialogHeader>
                         <AlertDialogBody>
                             <FormControl isRequired>
-                                {/* 
-                                <FormControlLabel><Text>Descrição</Text></FormControlLabel> */}
                                 <Input>
                                     <InputField placeholder="Arroz Sepé 5kg" />
                                 </Input>
                             </FormControl>
                             <HStack>
                                 <FormControl mt="$5" isRequired flex={1} mr="$5">
-                                    {/* <FormControlLabel><Text>Preço</Text></FormControlLabel> */}
                                     <Input>
                                         <InputField keyboardType="decimal-pad" placeholder="R$19,90" />
                                     </Input>
                                 </FormControl>
                                 <FormControl mt="$5" isRequired flex={1}>
-                                    {/* <FormControlLabel><Text>Peso</Text></FormControlLabel> */}
                                     <Input>
                                         <InputField keyboardType="decimal-pad" placeholder="1.2kg" />
                                     </Input>
                                 </FormControl>
                             </HStack>
-                            {/* <Text mt="$5">Quantidade</Text> */}
                             <HStack justifyContent="space-between" mt="$5">
                                 <Button mr="$4"><FontAwesome5 name="minus" size={14} color="#fff" /></Button>
                                 <Input flex={1}>
@@ -154,7 +152,21 @@ export default function Carrinho() {
                     </AlertDialogContent>
                 </AlertDialog>
 
-            </SafeAreaView>
-        </GluestackUIProvider>
+                {/* <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalItemCarrinho}
+                    onRequestClose={() => {
+                        setModalitemCarrinho(false);
+                    }}>
+                    <Box justifyContent="center" alignItems="center" width={"80%"} height={"50%"} bgColor="#fff">
+                        <Button onPress={() => setModalitemCarrinho(false)}>
+                            <ButtonText>Fechar</ButtonText>
+                        </Button>
+                    </Box>
+                </Modal> */}
+
+            </SafeAreaView >
+        </GluestackUIProvider >
     )
 }

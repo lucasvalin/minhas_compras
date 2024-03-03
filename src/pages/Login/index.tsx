@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Button, ButtonText, FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, GluestackUIProvider, Heading, Input, InputField, SafeAreaView, Text } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 import LottieView from 'lottie-react-native';
+import { StatusBar } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
 
@@ -15,6 +16,11 @@ export default function Login() {
 
     return (
         <GluestackUIProvider config={config}>
+            <StatusBar
+                animated={true}
+                backgroundColor="#2a001c"
+                hidden={false}
+            />
             <SafeAreaView flex={1} justifyContent='center' alignItems='center' backgroundColor='#2a001c'>
                 <LottieView
                     autoPlay

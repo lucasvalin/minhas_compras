@@ -6,6 +6,8 @@ const Stack = createStackNavigator();
 //Screens
 import Login from '../pages/Login';
 import Compras from '../pages/Main';
+import Lista from '../pages/Lista';
+import Carrinho from '../pages/Carrinho';
 
 export default function Routes() {
   return (
@@ -21,6 +23,18 @@ export default function Routes() {
         <Stack.Screen
           name="Compras"
           component={Compras}
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="Lista"
+          component={Lista}
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="Carrinho"
+          component={Carrinho}
           options={{ headerShown: false }}
         />
 
