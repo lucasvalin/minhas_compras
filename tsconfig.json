@@ -6,7 +6,8 @@
   "include": [
     "src",
     "node_modules",
-    "src/**/*.png"
+    "assets",
+    "typings"
   ],
   "resolveJsonModule": true
 }

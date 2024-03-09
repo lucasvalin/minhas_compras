@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { config } from '@gluestack-ui/config';
-import { Box, Button, ButtonText, Fab, FabIcon, FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, GluestackUIProvider, HStack, Heading, Input, InputField, InputIcon, InputSlot, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, SafeAreaView, Text } from '@gluestack-ui/themed';
-import { View, useWindowDimensions, Keyboard, StatusBar, Alert } from 'react-native';
-import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { Box, Button, ButtonText, Fab, FabIcon, GluestackUIProvider, HStack, Heading, Input, InputField, InputIcon, InputSlot, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, Text } from '@gluestack-ui/themed';
+import { Keyboard, Alert, ToastAndroid } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { MaterialIcons } from '@expo/vector-icons';
+
+//Firebase
+import firebase from '../../../firebase';
+import { getDatabase, ref, set, onValue } from "firebase/database";
 
 //Telas
 import Lista from '../Lista';
@@ -19,15 +20,23 @@ interface Item {
     quantidade: number
 }
 
-
 export default function Compras() {
+
+    const database = firebase.database();
+    const listaRef = database.ref('lista');
+    const listaPadraoRef = database.ref('lista_padrao');
+    const carrinhoRef = database.ref('carrinho');
+
     const [index, setIndex] = useState(0);
     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
     const [lista, setLista] = useState<Item[]>([]);
+    const [carrinho, setCarrinho] = useState<Item[]>([]);
+    const [precoCarrinho, setPrecoCarrinho] = useState<string>("");
     const [indiceItemSelecionado, setIndiceItemSelecionado] = useState<number>(-1);
     const [itemSelecionado, setItemSelecionado] = useState<Item>({ descricao: "", preco: "", peso: "", quantidade: 1 });
     const [modalItem, setModalItem] = useState(false);
     const [itemNovo, setItemNovo] = useState(true);
+    const [listaPadrao, setListaPadrao] = useState<Item[]>([]);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
@@ -40,24 +49,80 @@ export default function Compras() {
             () => setIsKeyboardOpen(false)
         );
 
+
+        // //Obtendo valores iniciais do banco
+        // listaRef.on('value', (res) => {
+        //     setLista(res);
+        // })
+
+        // listaPadraoRef.on('value', (res) => {
+        //     setListaPadrao(res);
+        // })
+
+        // carrinhoRef.on('value', (res) => {
+        //     setCarrinho(res);
+        // })
+
+
+        // Escute mudanças nos dados
+        dataRef.on('value', (res) => {
+            console.log(res);
+        });
+
         // Lembre-se de remover os ouvintes quando o componente for desmontado
         return () => {
             keyboardDidShowListener.remove();
             keyboardDidHideListener.remove();
+            ref.off('value')
         };
     }, []);
 
+    useEffect(() => {
+        calcularCarrinho();
+    }, [carrinho]);
+
+    const novoItem = () => {
+        setItemSelecionado({ descricao: "", preco: "", peso: "", quantidade: 1 });
+        setItemNovo(true)
+        setModalItem(true)
+    }
+
     const adicionarItemLista = () => {
         if (itemSelecionado) {
-            if (itemSelecionado.descricao && itemSelecionado.preco && itemSelecionado.quantidade) {
-                let copiaLista = [...lista];
-                copiaLista.push({
-                    descricao: itemSelecionado.descricao,
-                    preco: itemSelecionado.preco,
-                    peso: itemSelecionado.peso,
-                    quantidade: itemSelecionado?.quantidade,
-                });
-                setLista(copiaLista);
+            if (itemSelecionado.descricao && itemSelecionado.quantidade) {
+                if (itemSelecionado.preco) {
+                    //Verificando se o item ja existe no carrinho antes de adiciona-lo
+                    if (carrinho.find(item => item.descricao === itemSelecionado.descricao)) {
+                        ToastAndroid.show("Este item ja existe no carrinho", ToastAndroid.SHORT);
+                        return;
+                    }
+                    let copiaCarrinho = [...carrinho];
+                    copiaCarrinho.push({
+                        descricao: itemSelecionado.descricao,
+                        preco: itemSelecionado.preco,
+                        peso: itemSelecionado?.peso.replace(".", ","),
+                        quantidade: itemSelecionado.quantidade,
+                    });
+                    setCarrinho(copiaCarrinho);
+                    console.log(copiaCarrinho);
+
+                }
+                else {
+                    //Verificando se o item ja existe na lista antes de adiciona-lo
+                    if (lista.find(item => item.descricao === itemSelecionado.descricao)) {
+                        ToastAndroid.show("Este item ja existe na lista", ToastAndroid.SHORT);
+                        return;
+                    }
+                    let copiaLista = [...lista];
+                    copiaLista.push({
+                        descricao: itemSelecionado.descricao,
+                        preco: itemSelecionado?.preco,
+                        peso: itemSelecionado?.peso,
+                        quantidade: itemSelecionado?.quantidade,
+                    });
+                    setLista(copiaLista);
+                }
+                setItemSelecionado({ descricao: "", preco: "", peso: "", quantidade: 1 });
             }
             else {
                 Alert.alert("Ops", "Você não informou os campos obrigatórios");
@@ -65,13 +130,14 @@ export default function Compras() {
         }
     }
 
-    const consultarItemLista = (indice: number) => {
+    const consultarItem = (indice: number, destino: string) => {
+        const dados = destino == "lista" ? lista[indice] : carrinho[indice];
         setItemSelecionado({
-            descricao: lista[indice].descricao,
-            preco: lista[indice].preco,
-            peso: lista[indice].peso,
-            quantidade: lista[indice].quantidade
-        })
+            descricao: dados.descricao,
+            preco: dados.preco,
+            peso: dados.peso,
+            quantidade: dados.quantidade
+        });
         setIndiceItemSelecionado(indice);
         setItemNovo(false);
         setModalItem(true);
@@ -79,33 +145,108 @@ export default function Compras() {
 
     const atualizarItemLista = () => {
         if (itemSelecionado) {
-            if (itemSelecionado.descricao && itemSelecionado.preco && itemSelecionado.quantidade) {
-                let copiaLista = [...lista];
-                copiaLista[indiceItemSelecionado] = {
-                    descricao: itemSelecionado.descricao,
-                    preco: itemSelecionado.preco,
-                    peso: itemSelecionado.peso,
-                    quantidade: itemSelecionado?.quantidade,
-                };
-                setLista(copiaLista);
+            if (itemSelecionado.descricao && itemSelecionado.quantidade) {
+                if (itemSelecionado.preco) {
+                    let copiaCarrinho = [...carrinho];
+                    copiaCarrinho[indiceItemSelecionado] = {
+                        descricao: itemSelecionado.descricao,
+                        preco: itemSelecionado.preco,
+                        peso: itemSelecionado?.peso,
+                        quantidade: itemSelecionado?.quantidade,
+                    };
+                    setCarrinho(copiaCarrinho);
+
+                    //Removendo o item da lista caso ele tenha sido movido para o carrinho
+                    if (lista.find(item => item.descricao == itemSelecionado.descricao)) {
+                        let copiaLista = [...lista];
+                        const indice = copiaLista.findIndex(item => item.descricao == itemSelecionado.descricao);
+                        copiaLista.splice(indice, 1);
+                        setLista(copiaLista);
+                        ToastAndroid.show("Item movido para o carrinho", ToastAndroid.SHORT);
+                    }
+                }
+                else {
+                    let copiaLista = [...lista];
+                    copiaLista[indiceItemSelecionado] = {
+                        descricao: itemSelecionado.descricao,
+                        preco: itemSelecionado?.preco,
+                        peso: itemSelecionado?.peso,
+                        quantidade: itemSelecionado?.quantidade,
+                    };
+                    setLista(copiaLista);
+                    ToastAndroid.show("Item movido para a lista", ToastAndroid.SHORT);
+
+                    //Removendo o item do carrinho caso ele tenha sido movido para a lista
+                    if (carrinho.find(item => item.descricao == itemSelecionado.descricao)) {
+                        let copiaCarrinho = [...carrinho];
+                        const indice = copiaCarrinho.findIndex(item => item.descricao == itemSelecionado.descricao);
+                        copiaCarrinho.splice(indice, 1);
+                        setCarrinho(copiaCarrinho);
+                    }
+                }
             }
             else {
                 Alert.alert("Ops", "Você não informou os campos obrigatórios");
             }
         }
+
         setModalItem(false);
     }
 
-    const excluirItemLista = () => {
-        let copiaLista = [...lista];
-        copiaLista.splice(indiceItemSelecionado, 1);
-        setLista(copiaLista);
-        setModalItem(false);
+    const excluirItem = (indice: number, destino: string) => {
+        if (destino == "lista") {
+            let copiaLista = [...lista];
+            copiaLista.splice(indice, 1);
+            setLista(copiaLista);
+        }
+        else {
+            let copiaCarrinho = [...carrinho];
+            copiaCarrinho.splice(indice, 1);
+            setCarrinho(copiaCarrinho);
+        }
+    }
+
+    const calcularCarrinho = () => {
+        let total = 0.00
+        carrinho.forEach(item => {
+            let valor: number = item.peso ? (parseFloat(item.preco.replace(",", ".")) * parseFloat(item.peso) * item.quantidade) : (parseFloat(item.preco.replace(",", ".") * item.quantidade));
+            total += valor;
+        });
+        setPrecoCarrinho(total.toFixed(2).replace(".", ","));
+    }
+
+    const limparCarrinho = () => {
+        setCarrinho([]);
+    }
+
+    const restaurarListaPadrao = () => {
+        setLista(listaPadrao);
+        ToastAndroid.show("Lista padrão carregada", ToastAndroid.SHORT);
+    }
+
+    const salvarListaPadrao = () => {
+        setListaPadrao(lista);
+        ToastAndroid.show("Lista padrão atualizada", ToastAndroid.SHORT);
     }
 
     return (
         <GluestackUIProvider config={config}>
-            {index == 0 ? <Lista lista={lista} consultarItemLista={consultarItemLista} /> : <Carrinho lista={lista} />}
+            {index == 0 ?
+                <Lista
+                    lista={lista}
+                    consultarItem={consultarItem}
+                    excluirItem={excluirItem}
+                    restaurarListaPadrao={restaurarListaPadrao}
+                    salvarListaPadrao={salvarListaPadrao}
+                /> :
+                <Carrinho
+                    carrinho={carrinho}
+                    consultarItem={consultarItem}
+                    excluirItem={excluirItem}
+                    precoCarrinho={precoCarrinho}
+                    limparCarrinho={limparCarrinho}
+                />
+            }
             {isKeyboardOpen ? null :
                 <Fab
                     size="md"
@@ -118,34 +259,33 @@ export default function Compras() {
                     bottom="$20"
                     bg="$white"
                     $active-bg='#ddd'
-                    onPress={() => [setItemNovo(true), setModalItem(true)]}
+                    onPress={novoItem}
                 >
                     <FabIcon as={() => <FontAwesome5 name="plus" size={20} />} />
                 </Fab>
             }
             {isKeyboardOpen ? null :
                 <HStack w="100%">
-                    <Box flex={1} justifyContent='center' alignItems='center' bgColor={index == 0 ? '#444' : "#222"} borderRadius={0} h={50}>
-                        <Button
-                            onPress={() => setIndex(0)}
-                            variant="link"
-                            width="$10"
-                        >
-                            <Box width="$5" height="$5" borderRadius={"$full"} bgColor='red' position='absolute' zIndex={2} top={-2} right={-2} justifyContent='center' alignItems='center'><Text fontWeight='bold' color="#eee" fontSize={14}>3</Text></Box>
+                    <Button
+                        onPress={() => setIndex(0)}
+                        variant="link"
+                        flex={1} justifyContent='center' alignItems='center' bgColor={index == 0 ? '#444' : "#222"} borderRadius={0} h={50}
+                    >
+                        <Box bgColor={index == 0 ? '#444' : "#222"}>
+                            {lista.length > 0 ? <Box width="$5" height="$5" borderRadius={"$full"} bgColor='red' position='absolute' zIndex={2} top={-10} right={-10} justifyContent='center' alignItems='center'><Text fontWeight='bold' color="#eee" fontSize={14}>{lista.length}</Text></Box> : null}
                             <FontAwesome5 name="clipboard-list" size={22} color={index == 0 ? '#eee' : "#444"} />
-                        </Button>
-                    </Box>
-                    <Box flex={1} justifyContent='center' alignItems='center' bgColor={index == 1 ? '#444' : "#222"} borderRadius={0} h={50}>
-                        <Button
-                            onPress={() => setIndex(1)}
-                            variant="link"
-                            width="$10"
-                        // flex={1}
-                        >
-                            <Box width="$5" height="$5" borderRadius={"$full"} bgColor='red' position='absolute' zIndex={2} top={-2} right={-2} justifyContent='center' alignItems='center'><Text fontWeight='bold' color="#eee" fontSize={14}>3</Text></Box>
+                        </Box>
+                    </Button>
+                    <Button
+                        onPress={() => setIndex(1)}
+                        variant="link"
+                        flex={1} justifyContent='center' alignItems='center' bgColor={index == 1 ? '#444' : "#222"} borderRadius={0} h={50}
+                    >
+                        <Box bgColor={index == 1 ? '#444' : "#222"}>
+                            {carrinho.length > 0 ? <Box width="$5" height="$5" borderRadius={"$full"} bgColor='red' position='absolute' zIndex={2} top={-10} right={-10} justifyContent='center' alignItems='center'><Text fontWeight='bold' color="#eee" fontSize={14}>{carrinho.length}</Text></Box> : null}
                             <FontAwesome5 name="shopping-cart" size={22} color={index == 1 ? '#eee' : "#444"} />
-                        </Button>
-                    </Box>
+                        </Box>
+                    </Button>
                 </HStack>
             }
 
@@ -177,19 +317,14 @@ export default function Compras() {
                         </Input>
                         <HStack mt="$5">
                             <Input flex={1} mr="$3">
-                                <InputField value={itemSelecionado.preco} onChangeText={(e) => setItemSelecionado(prevState => ({ ...prevState, preco: e }))} onBlur={() => setItemSelecionado(prevState => ({ ...prevState, preco: itemSelecionado.preco.replace(".", ",") }))} keyboardType='decimal-pad' placeholder="Preço" />
+                                <InputField value={itemSelecionado.preco} onChangeText={(e) => setItemSelecionado(prevState => ({ ...prevState, preco: e }))} onBlur={() => setItemSelecionado(prevState => ({ ...prevState, preco: parseFloat(itemSelecionado.preco).toFixed(2).replace(".", ",") }))} keyboardType='decimal-pad' placeholder="Preço" />
                                 <InputSlot pr="$3">
-                                    {/* <InputIcon
-                                        as={() => <MaterialIcons name="attach-money" size={20} color="#555" />}
-                                        color="$darkBlue500"
-                                    /> */}
                                     <Text>R$</Text>
                                 </InputSlot>
                             </Input>
                             <Input flex={1}>
                                 <InputField value={itemSelecionado.peso ? itemSelecionado.peso.toString() : ""} onChangeText={(e) => setItemSelecionado(prevState => ({ ...prevState, peso: e }))} onBlur={() => setItemSelecionado(prevState => ({ ...prevState, peso: itemSelecionado.peso?.replace(".", ",") }))} keyboardType='decimal-pad' placeholder="Peso" />
                                 <InputSlot pr="$3">
-                                    {/* EyeIcon, EyeOffIcon are both imported from 'lucide-react-native' */}
                                     <InputIcon
                                         as={() => <FontAwesome5 name="weight-hanging" size={16} color="#555" />}
                                         color="$darkBlue500"
@@ -209,19 +344,8 @@ export default function Compras() {
                             </Button>
                         </HStack>
                     </ModalBody>
-                    <ModalFooter justifyContent={itemNovo ? "flex-end" : "space-between"}>
-                        {itemNovo ? null :
-                            <Button
-                                // variant="outline"
-                                size="sm"
-                                action="negative"
-                                mr="$3"
-                                width={"$32"}
-                                onPress={excluirItemLista}
-                            >
-                                <ButtonText fontSize={16}>Excluir</ButtonText>
-                            </Button>
-                        }
+                    <ModalFooter justifyContent={"space-between"}>
+                        <Text fontSize={14} color='#555'>{itemSelecionado.preco ? "Salvar no Carrinho" : "Salvar na Lista"}</Text>
                         <Button
                             size="sm"
                             // action="positive"

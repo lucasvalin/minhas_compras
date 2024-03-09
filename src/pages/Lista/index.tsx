@@ -2,11 +2,10 @@ import { useState, Dispatch, SetStateAction } from "react";
 import { AlertDialog, AlertDialogBackdrop, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, Box, Button, ButtonGroup, ButtonText, Checkbox, CheckboxGroup, CheckboxIcon, CheckboxIndicator, CheckboxLabel, Fab, FabIcon, FabLabel, FlatList, GluestackUIProvider, HStack, Heading, Image, Input, InputField, InputIcon, InputSlot, SafeAreaView, ScrollView, Text, VStack } from "@gluestack-ui/themed";
 import { config } from '@gluestack-ui/config';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { StatusBar } from 'react-native';
+import { Alert, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import bag from '../../../assets/Icons/bag.png';
-
 interface Item {
     descricao: string,
     preco: string,
@@ -16,14 +15,16 @@ interface Item {
 
 interface Lista {
     lista: Item[],
-    consultarItemLista: (indice: number) => void;
+    consultarItem: (indice: number, destino: string) => void;
+    excluirItem: (indice: number, destino: string) => void;
+    restaurarListaPadrao: () => void;
+    salvarListaPadrao: () => void;
 }
 
 export default function Lista(props: Lista) {
 
     const navigation = useNavigation();
 
-    const [itensSelecionadosLista, setItensSelecionadosLista] = useState([]);
     const [modalConfirmarLimpezaLista, setModalConfirmarLimpezaLista] = useState(false);
     const [modalCarregarItens, setModalCarregarItens] = useState(false);
     const [modalSalvarItens, setModalSalvarItens] = useState(false);
@@ -35,7 +36,7 @@ export default function Lista(props: Lista) {
             return (
                 <HStack h={"$16"} mb={props.item == props.total ? "$48" : 0} justifyContent="space-between" alignItems="center" borderBottomWidth={1} borderBottomColor="#c39e80">
                     <HStack alignItems="center" flex={1} mr="$10">
-                        <Button onPress={() => props.consultarItemLista(props.indice)} variant="link" flex={1} justifyContent="flex-start">
+                        <Button onPress={() => props.consultarItem(props.indice, "lista")} variant="link" flex={1} justifyContent="flex-start">
                             {/* <FontAwesome5 name="shopping-bag" size={28} color="#222" /> */}
                             <Image alt="iconeDaLista" size="xs" source={bag} />
                             <VStack ml="$2">
@@ -44,13 +45,30 @@ export default function Lista(props: Lista) {
                             </VStack>
                         </Button>
                     </HStack>
-                    <Button width={"$12"} variant="link" onPress={() => alert("Inserir no carrinho")}>
-                        <FontAwesome5 name="arrow-right" size={20} color="#333" />
+                    <Button onPress={() =>
+                        Alert.alert(
+                            'Exclusão de Item',
+                            'Tem certeza que deseja excluir o item?',
+                            [
+                                {
+                                    text: 'Cancelar',
+                                    // onPress: () => console.log('Cancelado'),
+                                    style: 'cancel',
+                                },
+                                {
+                                    text: 'Excluir',
+                                    onPress: () => props.excluirItem(props.indice, "lista"),
+                                },
+                            ],
+                            { cancelable: false }
+                        )
+                    } width={"$12"} variant="link" $active-backgroundColor="#c39e80">
+                        <FontAwesome5 name="trash" size={22} color="#f44336" />
                     </Button>
                     {/* <Button width={"$12"} variant="link" onPress={() => alert("Excluir")}>
                     <FontAwesome5 name="trash" size={20} color="#e53935" />
                 </Button> */}
-                </HStack>
+                </HStack >
             );
         }
     }
@@ -65,10 +83,43 @@ export default function Lista(props: Lista) {
             <SafeAreaView flex={1} backgroundColor='#d5b59c'>
                 <Box p={"$6"}>
                     <HStack justifyContent="space-between">
-                        <Button flex={1} mr="$5" bgColor="#b58154" $active-bg="#a67041" onPress={() => setModalCarregarItens(true)} >
+                        <Button onPress={() => Alert.alert(
+                            'Restaurar Lista Padrão',
+                            'Você irá substituir a lista atual, tem certeza que deseja avançar?',
+                            [
+                                {
+                                    text: 'Não',
+                                    // onPress: () => console.log('Cancelado'),
+                                    style: 'cancel',
+                                },
+                                {
+                                    text: 'Sim',
+                                    onPress: props.restaurarListaPadrao,
+                                },
+                            ],
+                            { cancelable: false }
+                        )
+                        }
+                            flex={1} mr="$5" bgColor="#b58154" $active-bg="#a67041" >
                             <ButtonText>CARREGAR</ButtonText>
                         </Button>
-                        <Button onPress={() => navigation.navigate("Carrinho")} flex={1} bgColor="#b58154" $active-bg="#a67041">
+                        <Button onPress={() => Alert.alert(
+                            'Salvar Lista Padrão',
+                            'Você irá substituir a lista padrão atual por esta, tem certeza?',
+                            [
+                                {
+                                    text: 'Não',
+                                    // onPress: () => console.log('Cancelado'),
+                                    style: 'cancel',
+                                },
+                                {
+                                    text: 'Sim',
+                                    onPress: props.salvarListaPadrao,
+                                },
+                            ],
+                            { cancelable: false }
+                        )
+                        } flex={1} bgColor="#b58154" $active-bg="#a67041">
                             <ButtonText>SALVAR</ButtonText>
                         </Button>
                     </HStack>
@@ -90,7 +141,7 @@ export default function Lista(props: Lista) {
                     <FlatList
                         data={props.lista}
                         renderItem={({ item, index }) => (
-                            <ItemDaLista item={item} indice={index} total={props.lista.length} consultarItemLista={props.consultarItemLista} />
+                            <ItemDaLista item={item} indice={index} total={props.lista.length} consultarItem={props.consultarItem} excluirItem={props.excluirItem} />
                         )}
                     // mb={"$16"}
                     // keyExtractor={(item) => lista.id}
@@ -243,6 +294,6 @@ export default function Lista(props: Lista) {
                     </AlertDialogContent>
                 </AlertDialog>
             </SafeAreaView>
-        </GluestackUIProvider>
+        </GluestackUIProvider >
     )
 }
