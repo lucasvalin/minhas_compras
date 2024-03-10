@@ -32,10 +32,9 @@ export default function Lista(props: Lista) {
     const [busca, setBusca] = useState<string>("");
 
     const ItemDaLista = (props: any) => {
-        // console.log(props);
         if (props.item.descricao.toLowerCase().includes(busca.toLowerCase())) {
             return (
-                <HStack h={"$16"} mb={props.item == props.total ? "$48" : 0} justifyContent="space-between" alignItems="center" borderBottomWidth={1} borderBottomColor="#c39e80">
+                <HStack h={"$16"} justifyContent="space-between" alignItems="center" borderBottomWidth={1} borderBottomColor="#c39e80">
                     <HStack alignItems="center" flex={1} mr="$10">
                         <Button onPress={() => props.consultarItem(props.indice, "lista")} variant="link" flex={1} justifyContent="flex-start">
                             {/* <FontAwesome5 name="shopping-bag" size={28} color="#222" /> */}
@@ -53,7 +52,6 @@ export default function Lista(props: Lista) {
                             [
                                 {
                                     text: 'Cancelar',
-                                    // onPress: () => console.log('Cancelado'),
                                     style: 'cancel',
                                 },
                                 {
@@ -88,11 +86,11 @@ export default function Lista(props: Lista) {
                 hidden={false}
             />
             <SafeAreaView flex={1} backgroundColor='#d5b59c'>
-                <Box px={"$6"}>
+                <Box flex={1} px={"$5"}>
                     <HStack justifyContent="flex-end" mb="$3">
                         <Button onPress={logout} variant="link">
                             <ButtonText>
-                                Sair
+                                sair
                             </ButtonText>
                         </Button>
                     </HStack>
@@ -103,7 +101,6 @@ export default function Lista(props: Lista) {
                             [
                                 {
                                     text: 'Não',
-                                    // onPress: () => console.log('Cancelado'),
                                     style: 'cancel',
                                 },
                                 {
@@ -123,7 +120,6 @@ export default function Lista(props: Lista) {
                             [
                                 {
                                     text: 'Não',
-                                    // onPress: () => console.log('Cancelado'),
                                     style: 'cancel',
                                 },
                                 {
@@ -137,43 +133,20 @@ export default function Lista(props: Lista) {
                             <ButtonText>SALVAR</ButtonText>
                         </Button>
                     </HStack>
-                    <HStack justifyContent="center" mb="$5" mt="$5">
-                        {/* <Heading verticalAlign="middle">Lista</Heading> */}
-                        {/* {props.lista.length > 0 ?
-                            <Button variant="link" onPress={() => setModalConfirmarLimpezaLista(true)}>
-                                <ButtonText color="#f44336">Limpar tudo ({props.lista.length})</ButtonText>
-                            </Button>
-                            : null
-                        } */}
-                    </HStack>
-                    <Input bgColor="rgba(255,255,255,0.8)" mb="$5">
+                    <Input bgColor="rgba(255,255,255,0.8)" mt="$5" mb="$3">
                         <InputField value={busca} onChangeText={(e) => setBusca(e)} placeholder="Procurar" />
                         <InputSlot px="$3">
                             <InputIcon as={() => <FontAwesome5 name="search" size={16} color="#aaa" />} />
                         </InputSlot>
                     </Input>
-                    <FlatList
-                        data={props.lista}
-                        renderItem={({ item, index }) => (
-                            <ItemDaLista item={item} indice={index} total={props.lista.length} consultarItem={props.consultarItem} excluirItem={props.excluirItem} />
-                        )}
-                    // mb={"$16"}
-                    // keyExtractor={(item) => lista.id}
-                    />
-                    {/* <Fab
-                        size="md"
-                        placement="bottom right"
-                        isHovered={false}
-                        isDisabled={false}
-                        isPressed={false}
-                        width={"$16"}
-                        height={"$16"}
-                        bottom="$40"
-                        bg="$white"
-                        onPress={() => alert("Novo item")}
-                    >
-                        <FabIcon as={() => <FontAwesome5 name="plus" size={16} />} mr="$1" />
-                    </Fab> */}
+                    <Box flex={1}>
+                        <FlatList
+                            data={props.lista}
+                            renderItem={({ item, index }) => (
+                                <ItemDaLista item={item} indice={index} total={props.lista.length} consultarItem={props.consultarItem} excluirItem={props.excluirItem} />
+                            )}
+                        />
+                    </Box>
                 </Box>
 
                 <AlertDialog

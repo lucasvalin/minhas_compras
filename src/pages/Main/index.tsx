@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { config } from '@gluestack-ui/config';
 import { Box, Button, ButtonText, Fab, FabIcon, GluestackUIProvider, HStack, Heading, Input, InputField, InputIcon, InputSlot, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, Text } from '@gluestack-ui/themed';
-import { Keyboard, Alert, ToastAndroid } from 'react-native';
+import { Keyboard, Alert, ToastAndroid, Animated, Easing } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -24,6 +24,7 @@ interface Item {
 export default function Compras() {
 
     const db = firebase.database();
+    const bounceValue = useRef(new Animated.Value(1)).current;
 
     const [index, setIndex] = useState(0);
     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
@@ -31,6 +32,7 @@ export default function Compras() {
     const [carrinho, setCarrinho] = useState<Item[]>([]);
     const [precoCarrinho, setPrecoCarrinho] = useState<string>("");
     const [indiceItemSelecionado, setIndiceItemSelecionado] = useState<number>(-1);
+    const [origemItemSelecionado, setOrigemItemSelecionado] = useState<string>("");
     const [itemSelecionado, setItemSelecionado] = useState<Item>({ descricao: "", preco: "", peso: "", quantidade: 1 });
     const [modalItem, setModalItem] = useState(false);
     const [itemNovo, setItemNovo] = useState(true);
@@ -38,7 +40,6 @@ export default function Compras() {
     const [usuario, setUsuario] = useState<string>("");
 
     useEffect(() => {
-
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
             () => setIsKeyboardOpen(true)
@@ -59,7 +60,7 @@ export default function Compras() {
                 });
 
                 db.ref(`${usuario}/listaPadrao`).on('value', (res) => {
-                    setLista(res.val() || []);
+                    setListaPadrao(res.val() || []);
                 });
 
                 db.ref(`${usuario}/carrinho`).on('value', (res) => {
@@ -87,6 +88,7 @@ export default function Compras() {
 
     useEffect(() => {
         calcularCarrinho();
+        animarCarrinho();
     }, [carrinho]);
 
     const novoItem = () => {
@@ -113,8 +115,7 @@ export default function Compras() {
                     });
                     setCarrinho(copiaCarrinho);
                     db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
-                    console.log(copiaCarrinho);
-
+                    animarCarrinho();
                 }
                 else {
                     //Verificando se o item ja existe na lista antes de adiciona-lo
@@ -140,14 +141,15 @@ export default function Compras() {
         }
     }
 
-    const consultarItem = (indice: number, destino: string) => {
-        const dados = destino == "lista" ? lista[indice] : carrinho[indice];
+    const consultarItem = (indice: number, origem: string) => {
+        const dados = origem == "lista" ? lista[indice] : carrinho[indice];
         setItemSelecionado({
             descricao: dados.descricao,
             preco: dados.preco,
             peso: dados.peso,
             quantidade: dados.quantidade
         });
+        setOrigemItemSelecionado(origem);
         setIndiceItemSelecionado(indice);
         setItemNovo(false);
         setModalItem(true);
@@ -157,46 +159,76 @@ export default function Compras() {
         if (itemSelecionado) {
             if (itemSelecionado.descricao && itemSelecionado.quantidade) {
                 if (itemSelecionado.preco) {
-                    let copiaCarrinho = [...carrinho];
-                    copiaCarrinho[indiceItemSelecionado] = {
-                        descricao: itemSelecionado.descricao,
-                        preco: itemSelecionado.preco,
-                        peso: itemSelecionado?.peso,
-                        quantidade: itemSelecionado?.quantidade,
-                    };
-                    setCarrinho(copiaCarrinho);
-                    db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
+                    if (origemItemSelecionado == "lista") {
 
-                    //Removendo o item da lista caso ele tenha sido movido para o carrinho
-                    if (lista.find(item => item.descricao == itemSelecionado.descricao)) {
+                        //Excluir da lista
                         let copiaLista = [...lista];
-                        const indice = copiaLista.findIndex(item => item.descricao == itemSelecionado.descricao);
-                        copiaLista.splice(indice, 1);
+                        copiaLista.splice(indiceItemSelecionado, 1);
                         setLista(copiaLista);
                         db.ref(`${usuario}/lista`).set(copiaLista);
+
+                        //Adicionar no carrinho
+                        let copiaCarrinho = [...carrinho];
+                        copiaCarrinho.push(
+                            {
+                                descricao: itemSelecionado.descricao,
+                                preco: itemSelecionado.preco,
+                                peso: itemSelecionado?.peso,
+                                quantidade: itemSelecionado?.quantidade,
+                            }
+                        );
+                        setCarrinho(copiaCarrinho);
+                        db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
                         ToastAndroid.show("Item movido para o carrinho", ToastAndroid.SHORT);
                     }
-                }
-                else {
-                    let copiaLista = [...lista];
-                    copiaLista[indiceItemSelecionado] = {
-                        descricao: itemSelecionado.descricao,
-                        preco: itemSelecionado?.preco,
-                        peso: itemSelecionado?.peso,
-                        quantidade: itemSelecionado?.quantidade,
-                    };
-                    setLista(copiaLista);
-                    db.ref(`${usuario}/lista`).set(copiaLista);
-                    ToastAndroid.show("Item movido para a lista", ToastAndroid.SHORT);
-
-                    //Removendo o item do carrinho caso ele tenha sido movido para a lista
-                    if (carrinho.find(item => item.descricao == itemSelecionado.descricao)) {
+                    else if (origemItemSelecionado == "carrinho") {
+                        //Atualizar no carrinho
                         let copiaCarrinho = [...carrinho];
-                        const indice = copiaCarrinho.findIndex(item => item.descricao == itemSelecionado.descricao);
-                        copiaCarrinho.splice(indice, 1);
+                        copiaCarrinho[indiceItemSelecionado] = {
+                            descricao: itemSelecionado.descricao,
+                            preco: itemSelecionado.preco,
+                            peso: itemSelecionado?.peso,
+                            quantidade: itemSelecionado?.quantidade
+                        }
                         setCarrinho(copiaCarrinho);
                         db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
                     }
+                }
+                else {
+                    if (origemItemSelecionado == "lista") {
+                        //Atualizar na lista
+                        let copiaLista = [...lista];
+                        copiaLista[indiceItemSelecionado] = {
+                            descricao: itemSelecionado.descricao,
+                            preco: itemSelecionado.preco,
+                            peso: itemSelecionado?.peso,
+                            quantidade: itemSelecionado?.quantidade
+                        }
+                        setLista(copiaLista);
+                        db.ref(`${usuario}/lista`).set(copiaLista);
+                    }
+                    else if (origemItemSelecionado == "carrinho") {
+                        //Excluir do carrinho
+                        let copiaCarrinho = [...carrinho];
+                        copiaCarrinho.splice(indiceItemSelecionado, 1);
+                        setCarrinho(copiaCarrinho);
+                        db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
+
+                        //Adicionar na lista
+                        let copiaLista = [...lista];
+                        copiaLista.push(
+                            {
+                                descricao: itemSelecionado.descricao,
+                                preco: itemSelecionado.preco,
+                                peso: itemSelecionado?.peso,
+                                quantidade: itemSelecionado?.quantidade
+                            }
+                        );
+                        setLista(copiaLista);
+                        db.ref(`${usuario}/lista`).set(copiaLista);
+                        ToastAndroid.show("Item movido para a lista", ToastAndroid.SHORT);
+                    }
+
                 }
             }
             else {
@@ -238,6 +270,7 @@ export default function Compras() {
 
     const restaurarListaPadrao = () => {
         setLista(listaPadrao);
+        db.ref(`${usuario}/lista`).set(listaPadrao);
         ToastAndroid.show("Lista padrão carregada", ToastAndroid.SHORT);
     }
 
@@ -247,8 +280,26 @@ export default function Compras() {
         ToastAndroid.show("Lista padrão atualizada", ToastAndroid.SHORT);
     }
 
+    const animarCarrinho = () => {
+        Animated.sequence([
+            Animated.timing(bounceValue, {
+                toValue: 0.1, // Define o quanto o componente deve encolher
+                duration: 200, // Duração da primeira animação em milissegundos
+                easing: Easing.linear, // Tipo de animação
+                useNativeDriver: true // Utiliza o driver nativo para a animação
+            }),
+            Animated.spring(bounceValue, {
+                toValue: 1,
+                tension: 120,
+                friction: 4,
+                useNativeDriver: true
+            })
+        ]).start();
+    }
+
     return (
         <GluestackUIProvider config={config}>
+
             {index == 0 ?
                 <Lista
                     lista={lista}
@@ -263,8 +314,10 @@ export default function Compras() {
                     excluirItem={excluirItem}
                     precoCarrinho={precoCarrinho}
                     limparCarrinho={limparCarrinho}
+                    bounceValue={bounceValue}
                 />
             }
+
             {isKeyboardOpen ? null :
                 <Fab
                     size="md"
@@ -335,13 +388,13 @@ export default function Compras() {
                         </Input>
                         <HStack mt="$5">
                             <Input flex={1} mr="$3">
-                                <InputField value={itemSelecionado.preco} onChangeText={(e) => setItemSelecionado(prevState => ({ ...prevState, preco: e }))} onBlur={() => setItemSelecionado(prevState => ({ ...prevState, preco: parseFloat(itemSelecionado.preco).toFixed(2).replace(".", ",") }))} keyboardType='decimal-pad' placeholder="Preço" />
+                                <InputField value={itemSelecionado.preco} onChangeText={(e) => setItemSelecionado(prevState => ({ ...prevState, preco: e }))} onBlur={() => itemSelecionado.preco ? setItemSelecionado(prevState => ({ ...prevState, preco: parseFloat(itemSelecionado.preco).toFixed(2).replace(".", ",") })) : null} keyboardType='decimal-pad' placeholder="Preço" />
                                 <InputSlot pr="$3">
                                     <Text>R$</Text>
                                 </InputSlot>
                             </Input>
                             <Input flex={1}>
-                                <InputField value={itemSelecionado.peso ? itemSelecionado.peso.toString() : ""} onChangeText={(e) => setItemSelecionado(prevState => ({ ...prevState, peso: e }))} onBlur={() => setItemSelecionado(prevState => ({ ...prevState, peso: itemSelecionado.peso?.replace(".", ",") }))} keyboardType='decimal-pad' placeholder="Peso" />
+                                <InputField value={itemSelecionado.peso ? itemSelecionado.peso.toString() : ""} onChangeText={(e) => setItemSelecionado(prevState => ({ ...prevState, peso: e }))} onBlur={() => itemSelecionado.peso ? setItemSelecionado(prevState => ({ ...prevState, peso: itemSelecionado.peso?.replace(".", ",") })) : null} keyboardType='decimal-pad' placeholder="Peso" />
                                 <InputSlot pr="$3">
                                     <InputIcon
                                         as={() => <FontAwesome5 name="weight-hanging" size={16} color="#555" />}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AlertDialog, AlertDialogBackdrop, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, Badge, BadgeIcon, BadgeText, Box, Button, ButtonGroup, ButtonText, Fab, FabIcon, FlatList, FormControl, FormControlLabel, GluestackUIProvider, HStack, Heading, Image, Input, InputField, InputIcon, InputSlot, SafeAreaView, Text, VStack } from "@gluestack-ui/themed";
 import { config } from '@gluestack-ui/config';
 import { Alert, Modal, StatusBar, TouchableOpacity } from 'react-native';
+import { Animated } from "react-native";
 
 import { FontAwesome5 } from '@expo/vector-icons';
 
@@ -20,6 +21,7 @@ interface Carrinho {
     excluirItem: (indice: number, destino: string) => void;
     precoCarrinho: string;
     limparCarrinho: () => void;
+    bounceValue: any;
 }
 
 export default function Carrinho(props: Carrinho) {
@@ -29,7 +31,7 @@ export default function Carrinho(props: Carrinho) {
     const ItemDaLista = (props: any) => {
         if (props.item.descricao.toLowerCase().includes(busca.toLowerCase())) {
             return (
-                <HStack h={"$20"} mb={props.item == props.total ? "$48" : 10} justifyContent="space-between" alignItems="center">
+                <HStack h={"$20"} mb={props.item == props.total ? "$0" : 10} justifyContent="space-between" alignItems="center">
                     <HStack flex={1} py="$2" borderRadius={10} justifyContent="space-between" alignItems="center" bgColor="rgba(255,255,255,0.1)">
                         <Button onPress={() => props.consultarItem(props.indice, "carrinho")} h={"100%"} flex={1} $hover-bgColor="#aaa" variant="link">
                             <HStack alignItems="center">
@@ -48,7 +50,6 @@ export default function Carrinho(props: Carrinho) {
                                 [
                                     {
                                         text: 'Cancelar',
-                                        // onPress: () => console.log('Cancelado'),
                                         style: 'cancel',
                                     },
                                     {
@@ -75,7 +76,7 @@ export default function Carrinho(props: Carrinho) {
                 hidden={false}
             />
             <SafeAreaView flex={1} backgroundColor='#13131a'>
-                <Box p={"$5"}>
+                <Box flex={1} px={"$5"}>
                     <HStack justifyContent="space-between" mb="$10">
                         <Button onPress={() => Alert.alert(
                             'Limpar Carrinho',
@@ -83,7 +84,6 @@ export default function Carrinho(props: Carrinho) {
                             [
                                 {
                                     text: 'Cancelar',
-                                    // onPress: () => console.log('Cancelado'),
                                     style: 'cancel',
                                 },
                                 {
@@ -96,8 +96,10 @@ export default function Carrinho(props: Carrinho) {
                             <ButtonText color="#eee" fontWeight="bold" fontSize={16}>Limpar Carrinho</ButtonText>
                         </Button>
                         <Badge size="md" p="$2" bgColor="rgba(0,0,0,0)" variant="solid" borderRadius={5} action="success" >
-                            <BadgeText color="$green600" fontWeight="bold" mt="$1" fontSize={18} mr="$2">R${props.precoCarrinho || "0,00"}</BadgeText>
-                            <BadgeIcon as={() => <FontAwesome5 name="shopping-cart" size={24} color="#eee" />} ml='$2' />
+                            <Animated.View style={{ flexDirection: "row", transform: [{ scale: props.bounceValue }] }}>
+                                <BadgeText color="$green600" fontWeight="bold" mt="$1" fontSize={18} mr="$2">R${props.precoCarrinho || "0,00"}</BadgeText>
+                                <BadgeIcon as={() => <FontAwesome5 name="shopping-cart" size={24} color="#eee" />} ml='$2' />
+                            </Animated.View>
                         </Badge>
                     </HStack>
                     <Input bgColor="$white" mb="$5">
@@ -106,16 +108,15 @@ export default function Carrinho(props: Carrinho) {
                             <InputIcon as={() => <FontAwesome5 name="search" size={16} color="#aaa" />} />
                         </InputSlot>
                     </Input>
-                    <FlatList
-                        data={props.carrinho}
-                        renderItem={({ item, index }) => (
-                            <ItemDaLista item={item} indice={index} total={props.carrinho.length} consultarItem={props.consultarItem} excluirItem={props.excluirItem} />
-                        )}
-                    // mb={"$16"}
-                    // keyExtractor={(item) => lista.id}
-                    />
+                    <Box flex={1}>
+                        <FlatList
+                            data={props.carrinho}
+                            renderItem={({ item, index }) => (
+                                <ItemDaLista item={item} indice={index} total={props.carrinho.length} consultarItem={props.consultarItem} excluirItem={props.excluirItem} />
+                            )}
+                        />
+                    </Box>
                 </Box>
-
             </SafeAreaView >
         </GluestackUIProvider >
     )

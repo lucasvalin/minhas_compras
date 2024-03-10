@@ -1,3 +1,4 @@
+import React from 'react';
 import { useRef, useState, useEffect } from 'react';
 import { Button, ButtonText, FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, GluestackUIProvider, Heading, Input, InputField, SafeAreaView, Text } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
@@ -76,12 +77,12 @@ export default function Login() {
                     isRequired={true}
                 >
                     <Input>
-                        <InputField color="#eee" value={usuario} onChangeText={(e) => setUsuario(e)} placeholder="usuario" />
+                        <InputField autoCapitalize={'none'} color="#eee" value={usuario} onChangeText={(e) => setUsuario(e)} placeholder="usuario" />
                     </Input>
                     <FormControlError>
                         {/* <FormControlErrorIcon as={AlertCircleIcon} /> */}
                         <FormControlErrorText>
-                            Informe seu e-mail
+                            Informe seu usuario
                         </FormControlErrorText>
                     </FormControlError>
 
@@ -96,14 +97,8 @@ export default function Login() {
                     isRequired={true}
                 >
                     <Input>
-                        <InputField color="#eee" value={senha} onChangeText={(e) => setSenha(e)} type='password' placeholder="******" />
+                        <InputField autoCapitalize={'none'} color="#eee" value={senha} onChangeText={(e) => setSenha(e)} type='password' placeholder="******" />
                     </Input>
-                    <FormControlHelper alignSelf='flex-end'>
-                        {/* <FormControlHelperText>Recuperar Senha</FormControlHelperText> */}
-                        <Button size="sm" variant="link">
-                            <ButtonText>Recuperar Senha</ButtonText>
-                        </Button>
-                    </FormControlHelper>
                     <FormControlError>
                         <FormControlErrorText>
                             Informe sua senha
