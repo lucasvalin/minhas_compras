@@ -37,7 +37,7 @@ export default function Carrinho(props: Carrinho) {
                                 <VStack ml="$4" width="70%">
                                     <Text color="$coolGray200" fontSize={16} numberOfLines={1} flex={1}>{props.item.descricao}</Text>
                                     <Text color="$coolGray400" fontSize={14}>Qtd: {props.item.quantidade}</Text>
-                                    <Text color="$green600" fontSize={14} fontWeight="bold">R${(parseFloat(props.item.preco.replace(",", ".")) * parseFloat(props.item.peso.replace(",", "."))).toFixed(2).replace(".", ",")}</Text>
+                                    <Text color="$green600" fontSize={14} fontWeight="bold">R${props.item.peso ? (parseFloat(props.item.preco.replace(",", ".")) * parseFloat(props.item.peso.replace(",", "."))).toFixed(2).replace(".", ",") : parseFloat(props.item.preco.replace(",", ".")).toFixed(2).replace(".", ",")}</Text>
                                 </VStack>
                             </HStack>
                         </Button>

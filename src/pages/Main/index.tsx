@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { config } from '@gluestack-ui/config';
 import { Box, Button, ButtonText, Fab, FabIcon, GluestackUIProvider, HStack, Heading, Input, InputField, InputIcon, InputSlot, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, Text } from '@gluestack-ui/themed';
 import { Keyboard, Alert, ToastAndroid } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { FontAwesome5 } from '@expo/vector-icons';
 
@@ -22,10 +23,7 @@ interface Item {
 
 export default function Compras() {
 
-    const database = firebase.database();
-    const listaRef = database.ref('lista');
-    const listaPadraoRef = database.ref('lista_padrao');
-    const carrinhoRef = database.ref('carrinho');
+    const db = firebase.database();
 
     const [index, setIndex] = useState(0);
     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
@@ -37,8 +35,10 @@ export default function Compras() {
     const [modalItem, setModalItem] = useState(false);
     const [itemNovo, setItemNovo] = useState(true);
     const [listaPadrao, setListaPadrao] = useState<Item[]>([]);
+    const [usuario, setUsuario] = useState<string>("");
 
     useEffect(() => {
+
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
             () => setIsKeyboardOpen(true)
@@ -49,32 +49,40 @@ export default function Compras() {
             () => setIsKeyboardOpen(false)
         );
 
+        AsyncStorage.getItem("usuario").then(usuario => {
+            if (usuario) {
+                setUsuario(usuario);
 
-        // //Obtendo valores iniciais do banco
-        // listaRef.on('value', (res) => {
-        //     setLista(res);
-        // })
+                // Escute mudanças nos dados
+                db.ref(`${usuario}/lista`).on('value', (res) => {
+                    setLista(res.val() || []);
+                });
 
-        // listaPadraoRef.on('value', (res) => {
-        //     setListaPadrao(res);
-        // })
+                db.ref(`${usuario}/listaPadrao`).on('value', (res) => {
+                    setLista(res.val() || []);
+                });
 
-        // carrinhoRef.on('value', (res) => {
-        //     setCarrinho(res);
-        // })
+                db.ref(`${usuario}/carrinho`).on('value', (res) => {
+                    setCarrinho(res.val() || []);
+                });
 
+                // Lembre-se de remover os ouvintes quando o componente for desmontado
+                return () => {
+                    keyboardDidShowListener.remove();
+                    keyboardDidHideListener.remove();
+                    db.ref(`${usuario}/lista`).off('value');
+                    db.ref(`${usuario}/listaPadrao`).off('value');
+                    db.ref(`${usuario}/carrinho`).off('value');
+                };
+            }
+        })
+            .catch(err => {
+                return () => {
+                    keyboardDidShowListener.remove();
+                    keyboardDidHideListener.remove();
+                };
+            })
 
-        // Escute mudanças nos dados
-        dataRef.on('value', (res) => {
-            console.log(res);
-        });
-
-        // Lembre-se de remover os ouvintes quando o componente for desmontado
-        return () => {
-            keyboardDidShowListener.remove();
-            keyboardDidHideListener.remove();
-            ref.off('value')
-        };
     }, []);
 
     useEffect(() => {
@@ -104,6 +112,7 @@ export default function Compras() {
                         quantidade: itemSelecionado.quantidade,
                     });
                     setCarrinho(copiaCarrinho);
+                    db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
                     console.log(copiaCarrinho);
 
                 }
@@ -121,6 +130,7 @@ export default function Compras() {
                         quantidade: itemSelecionado?.quantidade,
                     });
                     setLista(copiaLista);
+                    db.ref(`${usuario}/lista`).set(copiaLista);
                 }
                 setItemSelecionado({ descricao: "", preco: "", peso: "", quantidade: 1 });
             }
@@ -155,6 +165,7 @@ export default function Compras() {
                         quantidade: itemSelecionado?.quantidade,
                     };
                     setCarrinho(copiaCarrinho);
+                    db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
 
                     //Removendo o item da lista caso ele tenha sido movido para o carrinho
                     if (lista.find(item => item.descricao == itemSelecionado.descricao)) {
@@ -162,6 +173,7 @@ export default function Compras() {
                         const indice = copiaLista.findIndex(item => item.descricao == itemSelecionado.descricao);
                         copiaLista.splice(indice, 1);
                         setLista(copiaLista);
+                        db.ref(`${usuario}/lista`).set(copiaLista);
                         ToastAndroid.show("Item movido para o carrinho", ToastAndroid.SHORT);
                     }
                 }
@@ -174,6 +186,7 @@ export default function Compras() {
                         quantidade: itemSelecionado?.quantidade,
                     };
                     setLista(copiaLista);
+                    db.ref(`${usuario}/lista`).set(copiaLista);
                     ToastAndroid.show("Item movido para a lista", ToastAndroid.SHORT);
 
                     //Removendo o item do carrinho caso ele tenha sido movido para a lista
@@ -182,6 +195,7 @@ export default function Compras() {
                         const indice = copiaCarrinho.findIndex(item => item.descricao == itemSelecionado.descricao);
                         copiaCarrinho.splice(indice, 1);
                         setCarrinho(copiaCarrinho);
+                        db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
                     }
                 }
             }
@@ -198,11 +212,13 @@ export default function Compras() {
             let copiaLista = [...lista];
             copiaLista.splice(indice, 1);
             setLista(copiaLista);
+            db.ref(`${usuario}/lista`).set(copiaLista);
         }
         else {
             let copiaCarrinho = [...carrinho];
             copiaCarrinho.splice(indice, 1);
             setCarrinho(copiaCarrinho);
+            db.ref(`${usuario}/carrinho`).set(copiaCarrinho);
         }
     }
 
@@ -217,6 +233,7 @@ export default function Compras() {
 
     const limparCarrinho = () => {
         setCarrinho([]);
+        db.ref(`${usuario}/carrinho`).set([]);
     }
 
     const restaurarListaPadrao = () => {
@@ -226,6 +243,7 @@ export default function Compras() {
 
     const salvarListaPadrao = () => {
         setListaPadrao(lista);
+        db.ref(`${usuario}/listaPadrao`).set(lista);
         ToastAndroid.show("Lista padrão atualizada", ToastAndroid.SHORT);
     }
 

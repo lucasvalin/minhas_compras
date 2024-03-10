@@ -1,17 +1,47 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Button, ButtonText, FormControl, FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, GluestackUIProvider, Heading, Input, InputField, SafeAreaView, Text } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 import LottieView from 'lottie-react-native';
-import { StatusBar } from 'react-native';
+import { StatusBar, ToastAndroid } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+//Firebase
+import firebase from '../../../firebase';
+
+interface User {
+    usuario: string;
+    senha: string;
+}
 
 export default function Login() {
     const navigation = useNavigation();
     const animation = useRef(null);
+    const db = firebase.database();
+
+    const [usuario, setUsuario] = useState<string>("");
+    const [senha, setSenha] = useState<string>("");
+
+    useEffect(() => {
+        AsyncStorage.getItem("usuario").then(usuario => {
+            if (usuario) {
+                navigation.navigate("Compras");
+            }
+        })
+    }, []);
 
     const handleLogin = () => {
-        navigation.navigate("Compras");
+        db.ref("usuarios").once("value").then((value) => {
+            const autenticado = Object.values(value.val()).filter(user => user.usuario === usuario && user.senha === senha).length > 0;
+            if (autenticado) {
+                AsyncStorage.setItem("usuario", usuario);
+                navigation.navigate("Compras");
+            }
+            else {
+                ToastAndroid.show("Usuario ou senha incorreta", ToastAndroid.SHORT);
+            }
+        });
     }
 
     return (
@@ -46,7 +76,7 @@ export default function Login() {
                     isRequired={true}
                 >
                     <Input>
-                        <InputField placeholder="endereco@email.com" />
+                        <InputField color="#eee" value={usuario} onChangeText={(e) => setUsuario(e)} placeholder="usuario" />
                     </Input>
                     <FormControlError>
                         {/* <FormControlErrorIcon as={AlertCircleIcon} /> */}
@@ -66,7 +96,7 @@ export default function Login() {
                     isRequired={true}
                 >
                     <Input>
-                        <InputField type='password' placeholder="******" />
+                        <InputField color="#eee" value={senha} onChangeText={(e) => setSenha(e)} type='password' placeholder="******" />
                     </Input>
                     <FormControlHelper alignSelf='flex-end'>
                         {/* <FormControlHelperText>Recuperar Senha</FormControlHelperText> */}

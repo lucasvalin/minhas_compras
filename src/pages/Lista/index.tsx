@@ -2,8 +2,9 @@ import { useState, Dispatch, SetStateAction } from "react";
 import { AlertDialog, AlertDialogBackdrop, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, Box, Button, ButtonGroup, ButtonText, Checkbox, CheckboxGroup, CheckboxIcon, CheckboxIndicator, CheckboxLabel, Fab, FabIcon, FabLabel, FlatList, GluestackUIProvider, HStack, Heading, Image, Input, InputField, InputIcon, InputSlot, SafeAreaView, ScrollView, Text, VStack } from "@gluestack-ui/themed";
 import { config } from '@gluestack-ui/config';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { Alert, StatusBar } from 'react-native';
+import { Alert, StatusBar, ToastAndroid } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import bag from '../../../assets/Icons/bag.png';
 interface Item {
@@ -73,6 +74,12 @@ export default function Lista(props: Lista) {
         }
     }
 
+    const logout = () => {
+        AsyncStorage.removeItem("usuario").then(() => {
+            navigation.navigate("Login");
+        })
+    }
+
     return (
         <GluestackUIProvider config={config}>
             <StatusBar
@@ -81,7 +88,14 @@ export default function Lista(props: Lista) {
                 hidden={false}
             />
             <SafeAreaView flex={1} backgroundColor='#d5b59c'>
-                <Box p={"$6"}>
+                <Box px={"$6"}>
+                    <HStack justifyContent="flex-end" mb="$3">
+                        <Button onPress={logout} variant="link">
+                            <ButtonText>
+                                Sair
+                            </ButtonText>
+                        </Button>
+                    </HStack>
                     <HStack justifyContent="space-between">
                         <Button onPress={() => Alert.alert(
                             'Restaurar Lista Padrão',
