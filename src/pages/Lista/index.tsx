@@ -36,7 +36,23 @@ export default function Lista(props: Lista) {
             return (
                 <HStack h={"$16"} justifyContent="space-between" alignItems="center" borderBottomWidth={1} borderBottomColor="#c39e80">
                     <HStack alignItems="center" flex={1} mr="$10">
-                        <Button onPress={() => props.consultarItem(props.indice, "lista")} variant="link" flex={1} justifyContent="flex-start">
+                        <Button onLongPress={() =>
+                            Alert.alert(
+                                'Exclusão de Item',
+                                'Tem certeza que deseja excluir o item?',
+                                [
+                                    {
+                                        text: 'Cancelar',
+                                        style: 'cancel',
+                                    },
+                                    {
+                                        text: 'Excluir',
+                                        onPress: () => props.excluirItem(props.indice, "lista"),
+                                    },
+                                ],
+                                { cancelable: false }
+                            )
+                        } onPress={() => props.consultarItem(props.indice, "lista")} variant="link" flex={1} justifyContent="flex-start">
                             {/* <FontAwesome5 name="shopping-bag" size={28} color="#222" /> */}
                             <Image alt="iconeDaLista" size="xs" source={bag} />
                             <VStack ml="$2">

@@ -32,8 +32,24 @@ export default function Carrinho(props: Carrinho) {
         if (props.item.descricao.toLowerCase().includes(busca.toLowerCase())) {
             return (
                 <HStack h={"$20"} mb={props.item == props.total ? "$0" : 10} justifyContent="space-between" alignItems="center">
-                    <HStack flex={1} py="$2" borderRadius={10} justifyContent="space-between" alignItems="center" bgColor="rgba(255,255,255,0.1)">
-                        <Button onPress={() => props.consultarItem(props.indice, "carrinho")} h={"100%"} flex={1} $hover-bgColor="#aaa" variant="link">
+                    <HStack flex={1} py="$2" borderRadius={10} justifyContent="space-between" alignItems="center" bgColor="rgba(50,50,50,0.5)">
+                        <Button onLongPress={() =>
+                            Alert.alert(
+                                'Exclusão de Item',
+                                'Tem certeza que deseja excluir o item?',
+                                [
+                                    {
+                                        text: 'Cancelar',
+                                        style: 'cancel',
+                                    },
+                                    {
+                                        text: 'Excluir',
+                                        onPress: () => props.excluirItem(props.indice, "carrinho"),
+                                    },
+                                ],
+                                { cancelable: false }
+                            )
+                        } onPress={() => props.consultarItem(props.indice, "carrinho")} h={"100%"} flex={1} variant="link">
                             <HStack alignItems="center">
                                 <Image alt="iconeDaLista" size="xs" source={cart} />
                                 <VStack ml="$4" width="70%">
@@ -76,7 +92,7 @@ export default function Carrinho(props: Carrinho) {
                 hidden={false}
             />
             <SafeAreaView flex={1} backgroundColor='#13131a'>
-                <Box flex={1} px={"$5"}>
+                <Box flex={1} mt="$3" px={"$5"}>
                     <HStack justifyContent="space-between" mb="$10">
                         <Button onPress={() => Alert.alert(
                             'Limpar Carrinho',
