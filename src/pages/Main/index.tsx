@@ -257,7 +257,7 @@ export default function Compras() {
     const calcularCarrinho = () => {
         let total = 0.00
         carrinho.forEach(item => {
-            let valor: number = item.peso ? (parseFloat(item.preco.replace(",", ".")) * parseFloat(item.peso) * item.quantidade) : (parseFloat(item.preco.replace(",", ".") * item.quantidade));
+            let valor: number = item.peso ? (parseFloat(item.preco.replace(",", ".")) * parseFloat(item.peso.replace(",", ".")) * item.quantidade) : (parseFloat(item.preco.replace(",", ".") * item.quantidade));
             total += valor;
         });
         setPrecoCarrinho(total.toFixed(2).replace(".", ","));
